@@ -1,0 +1,25 @@
+{
+    "name": "AppWhatsAppBulk",
+    "alias": "appwhatsappbulk",
+    "description": "Schedule bulk WhatsApp campaigns to contact groups with multi-profile sending and delivery controls.",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\AppWhatsAppBulk\\Providers\\AppWhatsAppBulkServiceProvider"
+    ],
+    "files": [],
+    "permission": false,
+    "menu": {
+        "uri": "app/whatsapp/bulk",
+        "role": "client",
+        "platform": 1,
+        "section": "top",
+        "tab_id": 7,
+        "tab_name": "WhatsApp Unofficial",
+        "parent": "appchannelwhatsappunofficial",
+        "position": 1506,
+        "name": "Bulk campaigns",
+        "color": "#6d5dfc",
+        "icon": "fa-light fa-envelopes-bulk"
+    }
+}

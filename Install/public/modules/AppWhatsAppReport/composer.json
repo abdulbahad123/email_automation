@@ -1,0 +1,28 @@
+{
+    "name": "nwidart/appwhatsappreport",
+    "description": "",
+    "authors": [
+        {
+            "name": "",
+            "email": ""
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [],
+            "aliases": {}
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\AppWhatsAppReport\\": "app/",
+            "Modules\\AppWhatsAppReport\\Database\\Factories\\": "database/factories/",
+            "Modules\\AppWhatsAppReport\\Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Modules\\AppWhatsAppReport\\Tests\\": "tests/"
+        }
+    }
+}

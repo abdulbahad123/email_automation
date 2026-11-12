@@ -1,0 +1,23 @@
+{
+    "name": "nwidart/appemailsmtp",
+    "description": "",
+    "extra": {
+        "laravel": {
+            "providers": [],
+            "aliases": {}
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\AppEmailSMTP\\": "app/",
+            "Modules\\AppEmailSMTP\\Database\\Factories\\": "database/factories/",
+            "Modules\\AppEmailSMTP\\Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Modules\\AppEmailSMTP\\Tests\\": "tests/"
+        }
+    }
+}
+

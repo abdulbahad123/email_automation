@@ -1,0 +1,23 @@
+{
+    "name": "nwidart/appemailbulk",
+    "description": "",
+    "extra": {
+        "laravel": {
+            "providers": [],
+            "aliases": {}
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\AppEmailBulk\\": "app/",
+            "Modules\\AppEmailBulk\\Database\\Factories\\": "database/factories/",
+            "Modules\\AppEmailBulk\\Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Modules\\AppEmailBulk\\Tests\\": "tests/"
+        }
+    }
+}
+

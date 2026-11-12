@@ -1,0 +1,23 @@
+{
+    "name": "AppChannelWhatsappUnofficial",
+    "alias": "appchannelwhatsappunofficial",
+    "description": "",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\AppChannelWhatsappUnofficial\\Providers\\AppChannelWhatsappUnofficialServiceProvider"
+    ],
+    "files": [],
+    "permission": false,
+    "menu": {
+        "uri": "app/whatsapp_unofficial/profile",
+        "role": "client",
+        "platform": 1,
+        "section": "",
+        "tab_id": 1,
+        "position": 1500,
+        "name": "WhatsApp Unofficial",
+        "color": "#25d366",
+        "icon": "fab fa-whatsapp"
+    }
+}

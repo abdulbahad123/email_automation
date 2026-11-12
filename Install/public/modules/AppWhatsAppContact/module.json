@@ -1,0 +1,25 @@
+{
+    "name": "AppWhatsAppContact",
+    "alias": "appwhatsappcontact",
+    "description": "Organize WhatsApp contact groups and phone numbers for targeting, segmentation, and future campaign sending.",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\AppWhatsAppContact\\Providers\\AppWhatsAppContactServiceProvider"
+    ],
+    "files": [],
+    "permission": false,
+    "menu": {
+        "uri": "app/whatsapp/contact",
+        "role": "client",
+        "platform": 1,
+        "section": "top",
+        "tab_id": 7,
+        "tab_name": "WhatsApp Unofficial",
+        "parent": "appchannelwhatsappunofficial",
+        "position": 1502,
+        "name": "Contacts",
+        "color": "#25d366",
+        "icon": "fa-light fa-address-book"
+    }
+}

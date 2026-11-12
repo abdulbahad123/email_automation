@@ -1,0 +1,16 @@
+{
+    "name": "nwidart/paymentrazorpay",
+    "description": "Razorpay payment gateway",
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Modules\\PaymentRazorpay\\Providers\\PaymentRazorpayServiceProvider"
+            ]
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\PaymentRazorpay\\": "app/"
+        }
+    }
+}

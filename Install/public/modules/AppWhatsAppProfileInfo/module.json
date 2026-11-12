@@ -1,0 +1,29 @@
+{
+    "name": "AppWhatsAppProfileInfo",
+    "alias": "appwhatsappprofileinfo",
+    "description": "Inspect unofficial WhatsApp profile details, live session state, webhook status, and reconnect actions.",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\AppWhatsAppProfileInfo\\Providers\\AppWhatsAppProfileInfoServiceProvider"
+    ],
+    "files": [],
+    "permission": false,
+    "menu": {
+        "uri": "app/whatsapp/profile-info",
+        "role": "client",
+        "platform": 1,
+        "section": "top",
+        "tab_id": 7,
+        "tab_name": "WhatsApp Unofficial",
+        "parent": "appchannelwhatsappunofficial",
+        "position": 1509,
+        "name": "Profile Info",
+        "color": "#25d366",
+        "icon": "fa-light fa-circle-user"
+    }
+}
+
+
+
+

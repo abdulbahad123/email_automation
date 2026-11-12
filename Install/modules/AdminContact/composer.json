@@ -1,0 +1,25 @@
+{
+    "name": "nwidart/admincontact",
+    "description": "WhatsApp SaaS Contact Enquiries Module",
+    "authors": [
+        {
+            "name": "Developer",
+            "email": "dev@example.com"
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Modules\\AdminContact\\Providers\\AdminContactServiceProvider"
+            ],
+            "aliases": {
+                
+            }
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\AdminContact\\": "app/"
+        }
+    }
+}

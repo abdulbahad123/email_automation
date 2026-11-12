@@ -1,0 +1,12 @@
+@import "tailwindcss";
+
+@layer base {
+  .tw-a {
+    color: inherit !important;
+    text-decoration: none !important;
+  }
+  .tw-a:hover {
+    color: inherit !important;
+    text-decoration: none !important;
+  }
+}

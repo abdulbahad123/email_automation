@@ -1,0 +1,24 @@
+{
+    "name": "AdminLandingPage",
+    "alias": "adminlandingpage",
+    "description": "WhatsApp SaaS Dynamic Landing Page Management",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\AdminLandingPage\\Providers\\AdminLandingPageServiceProvider"
+    ],
+    "files": [],
+    "permission": true,
+    "menu": {
+        "uri": "admin/frontend/landing-page",
+        "role": "admin",
+        "platform": 1,
+        "section": "top",
+        "tab_id": 50,
+        "tab_name": "Frontend",
+        "position": 17000,
+        "name": "Landing Page",
+        "color": "#10b981",
+        "icon": "fa-light fa-rocket"
+    }
+}

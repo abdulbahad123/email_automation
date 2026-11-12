@@ -1,0 +1,35 @@
+# Archives & large binary artifacts
+Install.zip
+*.zip
+*.tar.gz
+
+# Dependencies
+vendor/
+**/vendor/
+node_modules/
+**/node_modules/
+
+# Environment & secrets
+.env
+**/.env
+!.env.example
+!**/.env.example
+
+# Laravel runtime, uploads & media
+Install/public/storage/
+Install/public/uploads/
+Install/storage/app/public/
+Install/storage/app/chunks/
+Install/storage/logs/
+Install/storage/framework/cache/*
+Install/storage/framework/sessions/*
+Install/storage/framework/views/*
+!Install/storage/framework/cache/.gitignore
+!Install/storage/framework/sessions/.gitignore
+!Install/storage/framework/views/.gitignore
+
+# WhatsApp runtime sessions & logs
+whatsapp_server/sessions/
+whatsapp_server/server.log
+whatsapp_server/instance_db_map.json
+

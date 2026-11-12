@@ -1,0 +1,10 @@
+{
+    "name": "app/pico",
+    "description": "Nova theme for guest",
+    "type": "laravel-theme",
+    "extra": {
+        "laravel-theme": {
+            "name": "app/pico"
+        }
+    }
+}

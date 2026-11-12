@@ -1,0 +1,24 @@
+{
+    "name": "AdminContact",
+    "alias": "admincontact",
+    "description": "WhatsApp SaaS Contact Enquiries, Location Details, and reCAPTCHA Management",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\AdminContact\\Providers\\AdminContactServiceProvider"
+    ],
+    "files": [],
+    "permission": true,
+    "menu": {
+        "uri": "admin/contact-us",
+        "role": "admin",
+        "platform": 1,
+        "section": "top",
+        "tab_id": 50,
+        "tab_name": "Frontend",
+        "position": 18000,
+        "name": "Contact Us",
+        "color": "#059669",
+        "icon": "fa-light fa-envelope-open-text"
+    }
+}

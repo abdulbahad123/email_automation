@@ -1,0 +1,25 @@
+{
+    "name": "AppEmailBulk",
+    "alias": "appemailbulk",
+    "description": "Create and automate scalable bulk email campaigns (10 to 10k+ emails) and quick single-email sending.",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\AppEmailBulk\\Providers\\AppEmailBulkServiceProvider"
+    ],
+    "files": [],
+    "permission": false,
+    "menu": {
+        "uri": "app/email/bulk",
+        "role": "client",
+        "platform": 1,
+        "section": "top",
+        "tab_id": 8,
+        "tab_name": "Email Automation",
+        "position": 1410,
+        "name": "Bulk Email",
+        "color": "#6d5dfc",
+        "icon": "fa-light fa-envelopes-bulk"
+    }
+}
+

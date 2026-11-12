@@ -1,0 +1,25 @@
+{
+    "name": "AppWhatsAppAutoReply",
+    "alias": "appwhatsappautoreply",
+    "description": "Automatically reply to incoming WhatsApp messages with rules, delays, exclusions, and media support.",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\AppWhatsAppAutoReply\\Providers\\AppWhatsAppAutoReplyServiceProvider"
+    ],
+    "files": [],
+    "permission": false,
+    "menu": {
+        "uri": "app/whatsapp/auto-reply",
+        "role": "client",
+        "platform": 1,
+        "section": "top",
+        "tab_id": 7,
+        "tab_name": "WhatsApp Unofficial",
+        "parent": "appchannelwhatsappunofficial",
+        "position": 1504,
+        "name": "Auto Reply",
+        "color": "#25d366",
+        "icon": "fa-light fa-reply-all"
+    }
+}

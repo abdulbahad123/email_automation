@@ -1,0 +1,25 @@
+{
+    "name": "AppEmailSMTP",
+    "alias": "appemailsmtp",
+    "description": "Connect and manage custom SMTP accounts with daily sending limits and test verification.",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\AppEmailSMTP\\Providers\\AppEmailSMTPServiceProvider"
+    ],
+    "files": [],
+    "permission": false,
+    "menu": {
+        "uri": "app/email/smtp",
+        "role": "client",
+        "platform": 1,
+        "section": "top",
+        "tab_id": 8,
+        "tab_name": "Email Automation",
+        "position": 1404,
+        "name": "SMTP Accounts",
+        "color": "#0ea5e9",
+        "icon": "fa-light fa-server"
+    }
+}
+

@@ -1,0 +1,25 @@
+{
+    "name": "AppWhatsAppAISmartReply",
+    "alias": "appwhatsappaismartreply",
+    "description": "Generate context-aware WhatsApp replies with AI to speed up agent responses and reduce manual typing.",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\AppWhatsAppAISmartReply\\Providers\\AppWhatsAppAISmartReplyServiceProvider"
+    ],
+    "files": [],
+    "permission": false,
+    "menu": {
+        "uri": "app/whatsapp/ai-smart-reply",
+        "role": "client",
+        "platform": 1,
+        "section": "top",
+        "tab_id": 7,
+        "tab_name": "WhatsApp Unofficial",
+        "parent": "appchannelwhatsappunofficial",
+        "position": 1505,
+        "name": "AI Smart Reply",
+        "color": "#25d366",
+        "icon": "fa-light fa-sparkles"
+    }
+}

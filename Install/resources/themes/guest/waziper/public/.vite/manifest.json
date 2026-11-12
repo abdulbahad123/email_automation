@@ -1,0 +1,16 @@
+{
+  "resources/themes/guest/waziper/assets/css/app.css": {
+    "file": "css/app.css",
+    "src": "resources/themes/guest/waziper/assets/js/app.js",
+    "isEntry": true
+  },
+  "resources/themes/guest/waziper/assets/js/app.js": {
+    "file": "js/app.js",
+    "name": "app",
+    "src": "resources/themes/guest/waziper/assets/js/app.js",
+    "isEntry": true,
+    "css": [
+      "css/app.css"
+    ]
+  }
+}

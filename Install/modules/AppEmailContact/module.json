@@ -1,0 +1,25 @@
+{
+    "name": "AppEmailContact",
+    "alias": "appemailcontact",
+    "description": "Manage email contact groups, import up to 10k+ leads via CSV or form, and track unsubscribes.",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\AppEmailContact\\Providers\\AppEmailContactServiceProvider"
+    ],
+    "files": [],
+    "permission": false,
+    "menu": {
+        "uri": "app/email/contact",
+        "role": "client",
+        "platform": 1,
+        "section": "top",
+        "tab_id": 8,
+        "tab_name": "Email Automation",
+        "position": 1406,
+        "name": "Email Contacts",
+        "color": "#10b981",
+        "icon": "fa-light fa-address-book"
+    }
+}
+

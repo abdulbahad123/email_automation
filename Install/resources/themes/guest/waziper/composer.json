@@ -1,0 +1,10 @@
+{
+    "name": "guest/waziper",
+    "description": "Waziper theme for guest",
+    "type": "laravel-theme",
+    "extra": {
+        "laravel-theme": {
+            "name": "guest/waziper"
+        }
+    }
+}

@@ -1,0 +1,28 @@
+{
+    "name": "PaymentRazorpay",
+    "alias": "paymentrazorpay",
+    "description": "Razorpay Payment Gateway",
+    "keywords": [
+        "razorpay",
+        "payment",
+        "upi",
+        "cards"
+    ],
+    "priority": 0,
+    "providers": [
+        "Modules\\PaymentRazorpay\\Providers\\PaymentRazorpayServiceProvider"
+    ],
+    "files": [],
+    "permission": false,
+    "menu": {
+        "uri": "razorpay",
+        "role": "client",
+        "platform": 1,
+        "section": "",
+        "tab_id": 1,
+        "position": 1600,
+        "name": "Razorpay",
+        "color": "#0c2340",
+        "icon": "fa-solid fa-credit-card"
+    }
+}

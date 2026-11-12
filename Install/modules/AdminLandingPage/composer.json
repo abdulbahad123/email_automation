@@ -1,0 +1,23 @@
+{
+    "name": "nwidart/adminlandingpage",
+    "description": "Dynamic Landing Page Module",
+    "authors": [
+        {
+            "name": "Admin",
+            "email": "admin@example.com"
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [],
+            "aliases": {}
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\AdminLandingPage\\": "app/",
+            "Modules\\AdminLandingPage\\Database\\Factories\\": "database/factories/",
+            "Modules\\AdminLandingPage\\Database\\Seeders\\": "database/seeders/"
+        }
+    }
+}

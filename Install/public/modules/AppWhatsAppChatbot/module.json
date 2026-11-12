@@ -1,0 +1,25 @@
+{
+    "name": "AppWhatsAppChatbot",
+    "alias": "appwhatsappchatbot",
+    "description": "Build keyword-based WhatsApp chatbot flows with media replies and flexible matching rules.",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\AppWhatsAppChatbot\\Providers\\AppWhatsAppChatbotServiceProvider"
+    ],
+    "files": [],
+    "permission": false,
+    "menu": {
+        "uri": "app/whatsapp/chatbot",
+        "role": "client",
+        "platform": 1,
+        "section": "top",
+        "tab_id": 7,
+        "tab_name": "WhatsApp Unofficial",
+        "parent": "appchannelwhatsappunofficial",
+        "position": 1503,
+        "name": "Chatbot",
+        "color": "#25d366",
+        "icon": "fa-light fa-robot"
+    }
+}
