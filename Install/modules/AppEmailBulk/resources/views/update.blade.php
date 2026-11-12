@@ -101,37 +101,18 @@
                 <div class="card border-gray-200 h-100">
                     <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center flex-wrap gap-8">
                         <div class="fw-6 fs-16 text-gray-900">{{ __('Email Composer') }}</div>
-                        <div class="d-flex flex-wrap gap-6">
-                            <button type="button" class="btn btn-light btn-sm insert-email-var" data-var="[name]">[name]</button>
-                            <button type="button" class="btn btn-light btn-sm insert-email-var" data-var="[email]">[email]</button>
-                            <button type="button" class="btn btn-light btn-sm insert-email-var" data-var="[company]">[company]</button>
-                            <button type="button" class="btn btn-light btn-sm insert-email-var" data-var="[unsubscribe_url]">[unsubscribe_url]</button>
-                        </div>
+                        <span class="fs-12 text-gray-500">{{ __('Choose Custom Message or Default Marketing Format') }}</span>
                     </div>
                     <div class="card-body d-flex flex-column gap-16">
-                        <div>
-                            <label class="form-label fw-6">{{ __('Email Subject') }} <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" name="subject" value="{{ $result->subject ?? '' }}" placeholder="{{ __('Example: {Hi|Hello} [name], special offer inside') }}" required>
-                        </div>
-
-                        <div>
-                            <label class="form-label fw-6">{{ __('Email Body (HTML & Variables Supported)') }} <span class="text-danger">*</span></label>
-                            <textarea id="email_campaign_body" class="textarea_editor form-control min-h-260" name="body" placeholder="{{ __('Write your HTML email message here...') }}">{{ $result->body ?? '<p>Hi [name],</p><p>Write your message here...</p>' }}</textarea>
-                            <div class="fs-12 text-gray-500 mt-1">{{ __('Supports Spintax ({Hi|Hello|Hey}) and CSV columns like [name], [company], [city]. An unsubscribe link is added automatically if [unsubscribe_url] is omitted.') }}</div>
-                        </div>
-
-                        <div>
-                            <label class="form-label fw-6">{{ __('Attachment (Optional)') }}</label>
-                            <input type="file" class="form-control" name="attachment">
-                            @if(!empty($result?->attachment))
-                                <div class="d-flex align-items-center gap-12 mt-2 fs-12 text-gray-700">
-                                    <span><i class="fa-light fa-paperclip me-1"></i>{{ basename($result->attachment) }}</span>
-                                    <label class="form-check-label text-danger cursor-pointer">
-                                        <input type="checkbox" class="form-check-input me-1" name="remove_attachment" value="1">{{ __('Remove current attachment') }}
-                                    </label>
-                                </div>
-                            @endif
-                        </div>
+                        @include('appemailbulk::partials.email-composer', [
+                            'prefix' => 'bulk',
+                            'formId' => 'EmailBulkForm',
+                            'subject' => $result->subject ?? '',
+                            'body' => $result->body ?? '<p>Hi [name],</p><p>Write your message here...</p>',
+                            'existingAttachment' => $result->attachment ?? '',
+                            'templates' => $templates ?? [],
+                            'isBulk' => true,
+                        ])
 
                         <div class="pt-3 mt-auto border-top d-flex justify-content-end gap-8">
                             <a href="{{ route('app.emailbulk.index') }}" class="btn btn-dark">{{ __('Cancel') }}</a>
@@ -145,25 +126,5 @@
         </div>
     </form>
 </div>
-@endsection
-
-@section('script')
-<script type="text/javascript">
-$(document).off('submit.emailCampaignTiny').on('submit.emailCampaignTiny', '#EmailBulkForm', function () {
-    if (window.tinymce) {
-        tinymce.triggerSave();
-    }
-});
-
-$(document).off('click.insertEmailVar').on('click.insertEmailVar', '.insert-email-var', function () {
-    var token = $(this).data('var');
-    if (window.tinymce && tinymce.get('email_campaign_body')) {
-        tinymce.get('email_campaign_body').execCommand('mceInsertContent', false, token);
-    } else {
-        var el = document.getElementById('email_campaign_body');
-        if (el) el.value += ' ' + token;
-    }
-});
-</script>
 @endsection
 

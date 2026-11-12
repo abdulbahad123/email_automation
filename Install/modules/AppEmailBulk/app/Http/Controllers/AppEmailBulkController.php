@@ -5,8 +5,10 @@ namespace Modules\AppEmailBulk\Http\Controllers;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use Modules\AppEmailBulk\Services\EmailCampaignProcessor;
+use Modules\AppEmailBulk\Services\EmailTemplateService;
 use Modules\AppEmailSMTP\Services\DynamicMailerService;
 use Modules\AppEmailSMTP\Services\EmailSchemaService;
 
@@ -175,6 +177,7 @@ class AppEmailBulkController extends Controller
 
         $selectedSmtps = $this->decodeSmtpIds($result->smtp_ids ?? '[]');
         $scheduleHours = $this->decodeScheduleHours($result->schedule_time ?? '');
+        $templates = EmailTemplateService::getTemplates();
 
         return view('appemailbulk::update', compact(
             'result',
@@ -182,7 +185,8 @@ class AppEmailBulkController extends Controller
             'hasAdminDefault',
             'groups',
             'selectedSmtps',
-            'scheduleHours'
+            'scheduleHours',
+            'templates'
         ));
     }
 
@@ -273,12 +277,18 @@ class AppEmailBulkController extends Controller
 
         $attachmentPath = $existing->attachment ?? null;
         if ($request->hasFile('attachment')) {
-            $file = $request->file('attachment');
-            if ($file && $file->isValid()) {
-                $attachmentPath = $file->store('email_attachments/' . $teamId, 'local');
+            $storedAttachment = $this->storeAttachmentFile($request, $teamId);
+            if ($storedAttachment !== null) {
+                $attachmentPath = $storedAttachment;
             }
         } elseif ($request->boolean('remove_attachment')) {
             $attachmentPath = null;
+        }
+
+        $body = EmailTemplateService::normalizeBodyHtml($body);
+        $inlineImage = $this->storeInlineImageFile($request, $teamId);
+        if ($inlineImage !== null) {
+            $body = EmailTemplateService::injectInlineImage($body, $inlineImage['url']);
         }
 
         $data = [
@@ -501,7 +511,9 @@ class AppEmailBulkController extends Controller
             ->limit(15)
             ->get();
 
-        return view('appemailbulk::single_send', compact('smtps', 'hasAdminDefault', 'recentLogs'));
+        $templates = EmailTemplateService::getTemplates();
+
+        return view('appemailbulk::single_send', compact('smtps', 'hasAdminDefault', 'recentLogs', 'templates'));
     }
 
     public function singleSendSubmit(Request $request)
@@ -550,16 +562,13 @@ class AppEmailBulkController extends Controller
             return response()->json(['status' => 0, 'message' => __('No active SMTP account found. Please add an SMTP account first.')]);
         }
 
-        $attachmentPath = null;
-        if ($request->hasFile('attachment')) {
-            $file = $request->file('attachment');
-            if ($file && $file->isValid()) {
-                $attachmentPath = $file->store('email_attachments/' . $teamId, 'local');
-            }
-        }
+        $attachmentPath = $this->storeAttachmentFile($request, $teamId);
+        $inlineImage = $this->storeInlineImageFile($request, $teamId);
 
-        // Wrap plain newlines cleanly if user sent plain text from dashboard quick-send
-        $htmlBody = strip_tags($body) === $body ? nl2br(e($body)) : $body;
+        $htmlBody = EmailTemplateService::normalizeBodyHtml($body);
+        if ($inlineImage !== null) {
+            $htmlBody = EmailTemplateService::injectInlineImage($htmlBody, $inlineImage['url']);
+        }
 
         $res = DynamicMailerService::sendWithAccount($account, $toEmail, $subject, $htmlBody, [
             'attachment' => $attachmentPath,
@@ -568,6 +577,9 @@ class AppEmailBulkController extends Controller
 
         if ($attachmentPath) {
             Storage::disk('local')->delete($attachmentPath);
+        }
+        if ($inlineImage && !empty($inlineImage['path']) && is_file($inlineImage['path'])) {
+            @unlink($inlineImage['path']);
         }
 
         DB::table($this->logTable)->insert([
@@ -595,6 +607,114 @@ class AppEmailBulkController extends Controller
             'status' => 1,
             'message' => __('Email sent successfully to :email!', ['email' => $toEmail]),
         ]);
+    }
+
+    public function uploadImage(Request $request)
+    {
+        $teamId = (int) $request->team_id;
+        $file = $request->file('file') ?: $request->file('image');
+
+        if (!$file || !$file->isValid()) {
+            return response()->json(['status' => 0, 'message' => __('Please choose a valid image file.')], 422);
+        }
+
+        $ext = strtolower((string) $file->getClientOriginalExtension());
+        if (!in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp'], true)) {
+            return response()->json(['status' => 0, 'message' => __('Only JPG, PNG, GIF, and WEBP images are supported.')], 422);
+        }
+
+        if ($file->getSize() > 5 * 1024 * 1024) {
+            return response()->json(['status' => 0, 'message' => __('Image size must not exceed 5 MB.')], 422);
+        }
+
+        $stored = $this->persistPublicImage($file, $teamId);
+        if (!$stored) {
+            return response()->json(['status' => 0, 'message' => __('Could not save uploaded image.')], 500);
+        }
+
+        return response()->json([
+            'status' => 1,
+            'location' => $stored['url'],
+            'url' => $stored['url'],
+        ]);
+    }
+
+    protected function storeAttachmentFile(Request $request, int $teamId): ?string
+    {
+        if (!$request->hasFile('attachment')) {
+            return null;
+        }
+
+        $file = $request->file('attachment');
+        if (!$file || !$file->isValid()) {
+            return null;
+        }
+
+        $originalName = trim((string) $file->getClientOriginalName());
+        $safeName = preg_replace('/[^a-zA-Z0-9._-]/', '_', $originalName);
+        if ($safeName === '' || $safeName === '.' || $safeName === '..') {
+            $ext = strtolower((string) $file->getClientOriginalExtension());
+            $safeName = 'attachment_' . rand_string(6) . ($ext !== '' ? '.' . $ext : '');
+        }
+
+        return $file->storeAs('email_attachments/' . $teamId . '/' . rand_string(8), $safeName, 'local');
+    }
+
+    /**
+     * @return array{url: string, path: string}|null
+     */
+    protected function storeInlineImageFile(Request $request, int $teamId): ?array
+    {
+        if (!$request->hasFile('inline_image')) {
+            return null;
+        }
+
+        $file = $request->file('inline_image');
+        if (!$file || !$file->isValid()) {
+            return null;
+        }
+
+        $ext = strtolower((string) $file->getClientOriginalExtension());
+        if (!in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp'], true)) {
+            return null;
+        }
+
+        return $this->persistPublicImage($file, $teamId);
+    }
+
+    /**
+     * @return array{url: string, path: string}|null
+     */
+    protected function persistPublicImage($file, int $teamId): ?array
+    {
+        $ext = strtolower((string) $file->getClientOriginalExtension());
+        $baseName = pathinfo((string) $file->getClientOriginalName(), PATHINFO_FILENAME);
+        $safeBase = preg_replace('/[^a-zA-Z0-9_-]/', '_', $baseName) ?: 'image';
+        $filename = rand_string(8) . '_' . mb_substr($safeBase, 0, 40) . '.' . $ext;
+
+        $relativeDir = 'uploads/email_images/' . $teamId;
+        $targetDir = public_path($relativeDir);
+
+        try {
+            File::ensureDirectoryExists($targetDir);
+            $file->move($targetDir, $filename);
+
+            return [
+                'url' => asset($relativeDir . '/' . $filename),
+                'path' => $targetDir . DIRECTORY_SEPARATOR . $filename,
+            ];
+        } catch (\Throwable $e) {
+            try {
+                $path = $file->storeAs('email_images/' . $teamId, $filename, 'public');
+                return [
+                    'url' => asset('storage/' . $path),
+                    'path' => Storage::disk('public')->path($path),
+                ];
+            } catch (\Throwable $inner) {
+                \Log::error('Failed to persist email image: ' . $inner->getMessage());
+                return null;
+            }
+        }
     }
 
     public function unsubscribe(string $id_secure)

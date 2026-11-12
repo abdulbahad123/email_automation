@@ -17,6 +17,7 @@ Route::middleware(['web', 'auth'])->group(function () {
         Route::get('logs/{id_secure}', [AppEmailBulkController::class, 'logs'])->name('app.emailbulk.logs');
         Route::match(['get', 'post'], 'logs-list/{id_secure}', [AppEmailBulkController::class, 'logsList'])->name('app.emailbulk.logs_list');
         Route::post('process-now/{id_secure?}', [AppEmailBulkController::class, 'processNow'])->name('app.emailbulk.process_now');
+        Route::post('upload-image', [AppEmailBulkController::class, 'uploadImage'])->name('app.emailbulk.upload_image');
     });
 
     Route::group(['prefix' => 'app/email'], function () {

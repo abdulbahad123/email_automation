@@ -17,10 +17,11 @@
 @section('content')
 <div class="container pb-5">
     <div class="row g-4">
-        <div class="col-12 col-xl-7">
+        <div class="col-12 col-xl-8">
             <div class="card border-gray-200">
-                <div class="card-header bg-white py-3">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center flex-wrap gap-8">
                     <div class="fw-6 fs-16 text-gray-900">{{ __('Compose Single Email') }}</div>
+                    <span class="fs-12 text-gray-500">{{ __('Choose Custom Message or Default Marketing Format') }}</span>
                 </div>
                 <div class="card-body">
                     @if($smtps->isEmpty() && !$hasAdminDefault)
@@ -35,7 +36,7 @@
 
                     <form id="SingleEmailForm" class="actionForm" action="{{ route('app.emailsend.submit') }}" method="POST" enctype="multipart/form-data">
                         @csrf
-                        <div class="row g-3">
+                        <div class="row g-3 mb-3">
                             <div class="col-md-6">
                                 <label class="form-label fw-6">{{ __('From SMTP Account') }}</label>
                                 <select class="form-select" name="smtp_id">
@@ -51,30 +52,29 @@
                                 <label class="form-label fw-6">{{ __('Recipient Email') }} <span class="text-danger">*</span></label>
                                 <input type="email" class="form-control" name="to_email" placeholder="customer@example.com" required>
                             </div>
-                            <div class="col-12">
-                                <label class="form-label fw-6">{{ __('Subject') }} <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" name="subject" placeholder="{{ __('Enter email subject') }}" required>
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label fw-6">{{ __('Message') }} <span class="text-danger">*</span></label>
-                                <textarea id="single_email_body" class="textarea_editor form-control min-h-220" name="body" placeholder="{{ __('Write your email message...') }}"></textarea>
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label fw-6">{{ __('Attachment (Optional)') }}</label>
-                                <input type="file" class="form-control" name="attachment">
-                            </div>
-                            <div class="col-12 pt-2 d-flex justify-content-end">
-                                <button type="submit" class="btn btn-primary px-5">
-                                    <i class="fa-light fa-paper-plane me-1"></i>{{ __('Send Email') }}
-                                </button>
-                            </div>
+                        </div>
+
+                        @include('appemailbulk::partials.email-composer', [
+                            'prefix' => 'single',
+                            'formId' => 'SingleEmailForm',
+                            'subject' => '',
+                            'body' => '<p>Hi,</p><p>Write your email message here...</p>',
+                            'existingAttachment' => '',
+                            'templates' => $templates ?? [],
+                            'isBulk' => false,
+                        ])
+
+                        <div class="pt-3 mt-3 border-top d-flex justify-content-end">
+                            <button type="submit" class="btn btn-primary px-5">
+                                <i class="fa-light fa-paper-plane me-1"></i>{{ __('Send Email') }}
+                            </button>
                         </div>
                     </form>
                 </div>
             </div>
         </div>
 
-        <div class="col-12 col-xl-5">
+        <div class="col-12 col-xl-4">
             <div class="card border-gray-200">
                 <div class="card-header bg-white py-3">
                     <div class="fw-6 fs-16 text-gray-900">{{ __('Recent Single Emails') }}</div>
@@ -112,15 +112,5 @@
         </div>
     </div>
 </div>
-@endsection
-
-@section('script')
-<script type="text/javascript">
-$(document).off('submit.singleEmailTiny').on('submit.singleEmailTiny', '#SingleEmailForm', function () {
-    if (window.tinymce) {
-        tinymce.triggerSave();
-    }
-});
-</script>
 @endsection
 

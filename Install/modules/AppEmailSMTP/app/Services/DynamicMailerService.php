@@ -6,6 +6,7 @@ use Illuminate\Contracts\Mail\Mailer as MailerContract;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 
 class DynamicMailerService
 {
@@ -191,10 +192,27 @@ class DynamicMailerService
             $plainText = trim(html_entity_decode(strip_tags(preg_replace('/<(br|p|div|li|tr|h[1-6])[^>]*>/i', "\n", $htmlBody)), ENT_QUOTES, 'UTF-8'));
 
             $mailer->send([], [], function ($message) use ($toEmail, $subject, $htmlBody, $plainText, $fromEmail, $fromName, $replyTo, $options) {
+                $finalHtml = self::prepareInlineImages($message, $htmlBody);
+
+                if (!empty($options['inline_image'])) {
+                    $inlinePath = self::resolveAttachmentPath((string) $options['inline_image']);
+                    if ($inlinePath && is_file($inlinePath)) {
+                        $cid = $message->embed($inlinePath);
+                        $imgBlock = '<div style="margin:0 0 18px 0;text-align:center;">'
+                            . '<img src="' . e($cid) . '" alt="Image" style="max-width:100%;height:auto;border-radius:8px;display:inline-block;">'
+                            . '</div>';
+                        $finalHtml = str_contains($finalHtml, '<!--INLINE_IMAGE_SLOT-->')
+                            ? str_replace('<!--INLINE_IMAGE_SLOT-->', $imgBlock, $finalHtml)
+                            : $imgBlock . $finalHtml;
+                    }
+                }
+
+                $finalHtml = str_replace('<!--INLINE_IMAGE_SLOT-->', '', $finalHtml);
+
                 $message->to($toEmail)
                     ->from($fromEmail, $fromName)
                     ->subject($subject)
-                    ->html($htmlBody);
+                    ->html($finalHtml);
 
                 if ($plainText !== '') {
                     $message->text($plainText);
@@ -211,9 +229,23 @@ class DynamicMailerService
                 }
 
                 if (!empty($options['attachment'])) {
-                    $attachmentPath = self::resolveAttachmentPath((string) $options['attachment']);
-                    if ($attachmentPath && is_file($attachmentPath)) {
-                        $message->attach($attachmentPath);
+                    $rawAttachments = is_array($options['attachment'])
+                        ? $options['attachment']
+                        : [$options['attachment']];
+
+                    foreach ($rawAttachments as $rawAttachment) {
+                        $rawAttachment = trim((string) $rawAttachment);
+                        if ($rawAttachment === '') {
+                            continue;
+                        }
+                        $attachmentPath = self::resolveAttachmentPath($rawAttachment);
+                        if ($attachmentPath && is_file($attachmentPath)) {
+                            $message->attach($attachmentPath, [
+                                'as' => basename($attachmentPath),
+                            ]);
+                        } else {
+                            \Log::warning('DynamicMailerService attachment file not found on disk: ' . $rawAttachment);
+                        }
                     }
                 }
             });
@@ -245,6 +277,97 @@ class DynamicMailerService
         }
     }
 
+    /**
+     * Convert inline data:image base64 URIs and local image URLs into embedded MIME CID images
+     * so Gmail, Outlook, and mobile mail clients render them reliably inside the email body.
+     */
+    protected static function prepareInlineImages($message, string $htmlBody): string
+    {
+        if (stripos($htmlBody, '<img') === false) {
+            return $htmlBody;
+        }
+
+        $counter = 0;
+
+        return (string) preg_replace_callback(
+            '/<img\b([^>]*?)\bsrc=(["\'])([^"\']+)\2([^>]*)>/i',
+            function (array $matches) use ($message, &$counter) {
+                $before = $matches[1];
+                $quote = $matches[2];
+                $src = html_entity_decode(trim($matches[3]), ENT_QUOTES, 'UTF-8');
+                $after = $matches[4];
+
+                // 1. Handle pasted/embedded base64 data URI images
+                if (preg_match('/^data:image\/([a-zA-Z0-9.+-]+);base64,(.+)$/is', $src, $dataMatch)) {
+                    $subType = strtolower($dataMatch[1]);
+                    $extMap = [
+                        'jpeg' => 'jpg',
+                        'pjpeg' => 'jpg',
+                        'svg+xml' => 'svg',
+                        'x-icon' => 'ico',
+                    ];
+                    $ext = $extMap[$subType] ?? $subType;
+                    $mime = 'image/' . $subType;
+                    $binary = base64_decode(preg_replace('/\s+/', '', $dataMatch[2]), true);
+
+                    if ($binary !== false && $binary !== '') {
+                        try {
+                            $counter++;
+                            $cid = $message->embedData($binary, 'inline_' . $counter . '_' . substr(md5($binary), 0, 8) . '.' . $ext, $mime);
+                            return '<img' . $before . 'src=' . $quote . $cid . $quote . $after . '>';
+                        } catch (\Throwable $e) {
+                            \Log::warning('Failed to embed base64 inline email image: ' . $e->getMessage());
+                        }
+                    }
+
+                    return $matches[0];
+                }
+
+                // 2. Skip already-embedded CIDs
+                if (stripos($src, 'cid:') === 0) {
+                    return $matches[0];
+                }
+
+                // 3. Embed local server images (relative paths or URLs matching our own APP_URL/host)
+                if (self::isLocalAssetSrc($src)) {
+                    $localFile = self::resolveAttachmentPath($src);
+                    if ($localFile && is_file($localFile)) {
+                        try {
+                            $cid = $message->embed($localFile);
+                            return '<img' . $before . 'src=' . $quote . $cid . $quote . $after . '>';
+                        } catch (\Throwable $e) {
+                            \Log::warning('Failed to embed local inline email image (' . $localFile . '): ' . $e->getMessage());
+                        }
+                    }
+                }
+
+                return $matches[0];
+            },
+            $htmlBody
+        );
+    }
+
+    protected static function isLocalAssetSrc(string $src): bool
+    {
+        if (!preg_match('#^https?://#i', $src)) {
+            return !str_starts_with($src, '//');
+        }
+
+        $srcHost = strtolower((string) parse_url($src, PHP_URL_HOST));
+        if ($srcHost === '') {
+            return false;
+        }
+
+        $knownHosts = array_filter([
+            strtolower((string) parse_url((string) config('app.url', ''), PHP_URL_HOST)),
+            request() ? strtolower((string) request()->getHost()) : '',
+            'localhost',
+            '127.0.0.1',
+        ]);
+
+        return in_array($srcHost, $knownHosts, true);
+    }
+
     public static function resolveAttachmentPath(string $path): ?string
     {
         $path = trim($path);
@@ -256,18 +379,30 @@ class DynamicMailerService
             return $path;
         }
 
+        $trimmed = ltrim($path, '/\\');
         $candidates = [
-            storage_path('app/' . ltrim($path, '/\\')),
-            storage_path('app/public/' . ltrim($path, '/\\')),
-            public_path(ltrim($path, '/\\')),
-            base_path(ltrim($path, '/\\')),
+            storage_path('app/private/' . $trimmed),
+            storage_path('app/' . $trimmed),
+            storage_path('app/public/' . $trimmed),
+            public_path($trimmed),
+            base_path($trimmed),
         ];
+
+        try {
+            $candidates[] = Storage::disk('local')->path($trimmed);
+        } catch (\Throwable $e) {}
+
+        try {
+            $candidates[] = Storage::disk('public')->path($trimmed);
+        } catch (\Throwable $e) {}
 
         $urlPath = parse_url($path, PHP_URL_PATH);
         if ($urlPath) {
-            $candidates[] = public_path(ltrim($urlPath, '/\\'));
-            $candidates[] = base_path(ltrim($urlPath, '/\\'));
-            $candidates[] = storage_path('app/public/' . ltrim(preg_replace('#^/?storage/#', '', $urlPath), '/\\'));
+            $decodedUrlPath = ltrim(rawurldecode($urlPath), '/\\');
+            $candidates[] = public_path($decodedUrlPath);
+            $candidates[] = base_path($decodedUrlPath);
+            $candidates[] = storage_path('app/public/' . ltrim(preg_replace('#^/?storage/#', '', $decodedUrlPath), '/\\'));
+            $candidates[] = storage_path('app/private/' . $decodedUrlPath);
         }
 
         foreach ($candidates as $candidate) {

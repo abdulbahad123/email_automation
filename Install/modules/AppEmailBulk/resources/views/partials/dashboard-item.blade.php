@@ -85,7 +85,7 @@
                     <a href="{{ route('app.emailsmtp.index') }}" class="btn btn-primary btn-sm flex-shrink-0">{{ __('Add SMTP') }}</a>
                 </div>
             @else
-                <form id="DashboardQuickEmailForm" class="actionForm" action="{{ route('app.emailsend.submit') }}" method="POST" data-call-success="document.getElementById('DashboardQuickEmailForm').reset();">
+                <form id="DashboardQuickEmailForm" class="actionForm" action="{{ route('app.emailsend.submit') }}" method="POST" enctype="multipart/form-data" data-call-success="document.getElementById('DashboardQuickEmailForm').reset();">
                     @csrf
                     <div class="row g-3">
                         <div class="col-md-4">
@@ -111,8 +111,16 @@
                             <label class="form-label fs-13 fw-6">{{ __('Message') }} <span class="text-danger">*</span></label>
                             <textarea class="form-control" name="body" rows="3" placeholder="{{ __('Write your message here...') }}" required></textarea>
                         </div>
-                        <div class="col-12 d-flex justify-content-end">
-                            <button type="submit" class="btn btn-primary px-4">
+                        <div class="col-md-4">
+                            <label class="form-label fs-12 fw-6">{{ __('Body Image (Optional)') }}</label>
+                            <input type="file" class="form-control form-control-sm" name="inline_image" accept="image/jpeg,image/png,image/gif,image/webp">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fs-12 fw-6">{{ __('Attachment (Optional)') }}</label>
+                            <input type="file" class="form-control form-control-sm" name="attachment">
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end justify-content-end">
+                            <button type="submit" class="btn btn-primary px-4 w-100 w-md-auto">
                                 <i class="fa-light fa-paper-plane me-1"></i>{{ __('Send Single Email') }}
                             </button>
                         </div>
