@@ -428,8 +428,10 @@
 
         if (syncEditorAndSubject) {
             var subjEl = document.getElementById(prefix + '_email_subject');
-            if (subjEl && !subjEl.value.trim()) {
+            var lastSubj = window.EmailComposerState[prefix].lastPresetSubject || '';
+            if (subjEl && (!subjEl.value.trim() || subjEl.value.trim() === lastSubj)) {
                 subjEl.value = tpl.default_subject || '';
+                window.EmailComposerState[prefix].lastPresetSubject = tpl.default_subject || '';
             }
         }
 
@@ -463,7 +465,10 @@
     }
 
     function setupWrapper(wrapper) {
-        if (wrapper.dataset.initialized === '1') return;
+        if (wrapper.dataset.initialized === '1') {
+            initEmailTinyMCE(wrapper.getAttribute('data-prefix'));
+            return;
+        }
         wrapper.dataset.initialized = '1';
 
         var prefix = wrapper.getAttribute('data-prefix');
@@ -487,110 +492,168 @@
         }
     }
 
-    document.addEventListener('DOMContentLoaded', function () {
-        document.querySelectorAll('.email-composer-wrapper').forEach(setupWrapper);
-    });
-
-    if (document.readyState !== 'loading') {
+    function initAllComposers() {
         document.querySelectorAll('.email-composer-wrapper').forEach(setupWrapper);
     }
 
-    $(document).off('click.tplCard').on('click.tplCard', '.tpl-preset-card', function () {
-        var prefix = $(this).data('prefix');
-        var tplId = $(this).data('template-id');
-        loadTemplateIntoFields(prefix, tplId, true);
-    });
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initAllComposers);
+    } else {
+        initAllComposers();
+    }
+    window.addEventListener('load', initAllComposers);
 
-    $(document).off('input.tplField change.tplField').on('input.tplField change.tplField', '.tpl-field', function () {
-        var prefix = $(this).data('prefix');
-        renderTemplatePreviewAndSync(prefix, true);
-    });
+    if (!window.__emailComposerEventsBound) {
+        window.__emailComposerEventsBound = true;
 
-    $(document).off('click.tplClearImg').on('click.tplClearImg', '.tpl-clear-image', function () {
-        var prefix = $(this).data('prefix');
-        $('#' + prefix + '_tpl_image_url').val('');
-        renderTemplatePreviewAndSync(prefix, true);
-    });
-
-    $(document).off('click.tplApply').on('click.tplApply', '.tpl-apply-to-editor', function () {
-        var prefix = $(this).data('prefix');
-        renderTemplatePreviewAndSync(prefix, true);
-        var tabBtn = document.getElementById(prefix + '_tab_custom_btn');
-        if (tabBtn) tabBtn.click();
-    });
-
-    $(document).off('click.tplResetCustom').on('click.tplResetCustom', '.tpl-reset-custom-btn', function () {
-        var prefix = $(this).data('prefix');
-        var wrapper = document.querySelector('.email-composer-wrapper[data-prefix="' + prefix + '"]');
-        var isBulk = wrapper && wrapper.getAttribute('data-is-bulk') === '1';
-        setEditorContent(prefix, isBulk ? '<p>Hi [name],</p><p>Write your message here...</p>' : '<p>Hi,</p><p>Write your message here...</p>');
-        var tabBtn = document.getElementById(prefix + '_tab_custom_btn');
-        if (tabBtn) tabBtn.click();
-    });
-
-    $(document).off('shown.bs.tab.emailMode').on('shown.bs.tab.emailMode', '[id$="_tab_template_btn"]', function () {
-        var id = $(this).attr('id') || '';
-        var prefix = id.replace('_tab_template_btn', '');
-        renderTemplatePreviewAndSync(prefix, true);
-    });
-
-    $(document).off('click.insertEmailVar').on('click.insertEmailVar', '.insert-email-var', function () {
-        var targetId = $(this).data('target');
-        var token = $(this).data('var');
-        if (window.tinymce && tinymce.get(targetId)) {
-            tinymce.get(targetId).execCommand('mceInsertContent', false, token);
-            tinymce.get(targetId).save();
-        } else {
-            var el = document.getElementById(targetId);
-            if (el) el.value += ' ' + token;
-        }
-    });
-
-    $(document).off('change.emailInlineUpload').on('change.emailInlineUpload', '.email-inline-upload', function () {
-        var input = this;
-        var file = input.files && input.files[0];
-        if (!file) return;
-
-        var prefix = $(input).data('target');
-        var mode = $(input).data('mode');
-        var statusEl = $('#' + prefix + '_inline_upload_status');
-
-        if (statusEl.length) {
-            statusEl.removeClass('d-none text-danger text-success').addClass('text-primary').text('Uploading image...');
-        }
-
-        uploadEmailImageFile(
-            file,
-            function (url) {
-                input.value = '';
-                if (mode === 'template') {
-                    $('#' + prefix + '_tpl_image_url').val(url);
-                    renderTemplatePreviewAndSync(prefix, true);
-                } else {
-                    var targetId = prefix + '_email_body';
-                    var imgHtml = '<p style="text-align:center;"><img src="' + escapeHtml(url) + '" alt="Email Image" style="max-width:100%;height:auto;border-radius:8px;" /></p>';
-                    if (window.tinymce && tinymce.get(targetId)) {
-                        tinymce.get(targetId).execCommand('mceInsertContent', false, imgHtml);
-                        tinymce.get(targetId).save();
-                    } else {
-                        var el = document.getElementById(targetId);
-                        if (el) el.value = imgHtml + '\n' + el.value;
-                    }
-                    if (statusEl.length) {
-                        statusEl.removeClass('text-primary').addClass('text-success').text('Image uploaded and inserted into email body.');
-                    }
-                }
-            },
-            function (msg) {
-                input.value = '';
-                if (statusEl.length) {
-                    statusEl.removeClass('d-none text-primary').addClass('text-danger').text(msg);
-                } else {
-                    alert(msg);
-                }
+        document.addEventListener('click', function (e) {
+            var card = e.target.closest('.tpl-preset-card');
+            if (card) {
+                loadTemplateIntoFields(
+                    card.getAttribute('data-prefix'),
+                    card.getAttribute('data-template-id'),
+                    true
+                );
+                return;
             }
-        );
-    });
+
+            var clearBtn = e.target.closest('.tpl-clear-image');
+            if (clearBtn) {
+                var cPrefix = clearBtn.getAttribute('data-prefix');
+                var imgInput = document.getElementById(cPrefix + '_tpl_image_url');
+                if (imgInput) imgInput.value = '';
+                renderTemplatePreviewAndSync(cPrefix, true);
+                return;
+            }
+
+            var applyBtn = e.target.closest('.tpl-apply-to-editor');
+            if (applyBtn) {
+                var aPrefix = applyBtn.getAttribute('data-prefix');
+                renderTemplatePreviewAndSync(aPrefix, true);
+                var customTabBtn = document.getElementById(aPrefix + '_tab_custom_btn');
+                if (customTabBtn) customTabBtn.click();
+                return;
+            }
+
+            var resetBtn = e.target.closest('.tpl-reset-custom-btn');
+            if (resetBtn) {
+                var rPrefix = resetBtn.getAttribute('data-prefix');
+                var wrapper = document.querySelector('.email-composer-wrapper[data-prefix="' + rPrefix + '"]');
+                var isBulk = wrapper && wrapper.getAttribute('data-is-bulk') === '1';
+                setEditorContent(
+                    rPrefix,
+                    isBulk ? '<p>Hi [name],</p><p>Write your message here...</p>' : '<p>Hi,</p><p>Write your message here...</p>'
+                );
+                var backBtn = document.getElementById(rPrefix + '_tab_custom_btn');
+                if (backBtn) backBtn.click();
+                return;
+            }
+
+            var varBtn = e.target.closest('.insert-email-var');
+            if (varBtn) {
+                var targetId = varBtn.getAttribute('data-target');
+                var token = varBtn.getAttribute('data-var');
+                if (window.tinymce && tinymce.get(targetId)) {
+                    tinymce.get(targetId).execCommand('mceInsertContent', false, token);
+                    tinymce.get(targetId).save();
+                } else {
+                    var el = document.getElementById(targetId);
+                    if (el) el.value += ' ' + token;
+                }
+                return;
+            }
+
+            var tplTabBtn = e.target.closest('[id$="_tab_template_btn"]');
+            if (tplTabBtn) {
+                var tId = tplTabBtn.getAttribute('id') || '';
+                var tPrefix = tId.replace('_tab_template_btn', '');
+                setTimeout(function () {
+                    renderTemplatePreviewAndSync(tPrefix, true);
+                }, 20);
+            }
+        });
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key !== 'Enter' && e.key !== ' ') return;
+            var card = e.target.closest('.tpl-preset-card');
+            if (card) {
+                e.preventDefault();
+                loadTemplateIntoFields(
+                    card.getAttribute('data-prefix'),
+                    card.getAttribute('data-template-id'),
+                    true
+                );
+            }
+        });
+
+        document.addEventListener('input', function (e) {
+            var field = e.target.closest('.tpl-field');
+            if (field) {
+                renderTemplatePreviewAndSync(field.getAttribute('data-prefix'), true);
+            }
+        });
+
+        document.addEventListener('change', function (e) {
+            var field = e.target.closest('.tpl-field');
+            if (field) {
+                renderTemplatePreviewAndSync(field.getAttribute('data-prefix'), true);
+                return;
+            }
+
+            var uploadInput = e.target.closest('.email-inline-upload');
+            if (uploadInput) {
+                var file = uploadInput.files && uploadInput.files[0];
+                if (!file) return;
+
+                var prefix = uploadInput.getAttribute('data-target');
+                var mode = uploadInput.getAttribute('data-mode');
+                var statusEl = document.getElementById(prefix + '_inline_upload_status');
+
+                if (statusEl) {
+                    statusEl.classList.remove('d-none', 'text-danger', 'text-success');
+                    statusEl.classList.add('text-primary');
+                    statusEl.textContent = 'Uploading image...';
+                }
+
+                uploadEmailImageFile(
+                    file,
+                    function (url) {
+                        uploadInput.value = '';
+                        if (mode === 'template') {
+                            var urlInput = document.getElementById(prefix + '_tpl_image_url');
+                            if (urlInput) urlInput.value = url;
+                            renderTemplatePreviewAndSync(prefix, true);
+                        } else {
+                            var targetId = prefix + '_email_body';
+                            var imgHtml = '<p style="text-align:center;"><img src="' + escapeHtml(url) + '" alt="Email Image" style="max-width:100%;height:auto;border-radius:8px;" /></p>';
+                            if (window.tinymce && tinymce.get(targetId)) {
+                                tinymce.get(targetId).execCommand('mceInsertContent', false, imgHtml);
+                                tinymce.get(targetId).save();
+                            } else {
+                                var bodyEl = document.getElementById(targetId);
+                                if (bodyEl) bodyEl.value = imgHtml + '\n' + bodyEl.value;
+                            }
+                            if (statusEl) {
+                                statusEl.classList.remove('text-primary');
+                                statusEl.classList.add('text-success');
+                                statusEl.textContent = 'Image uploaded and inserted into email body.';
+                            }
+                        }
+                    },
+                    function (msg) {
+                        uploadInput.value = '';
+                        if (statusEl) {
+                            statusEl.classList.remove('d-none', 'text-primary');
+                            statusEl.classList.add('text-danger');
+                            statusEl.textContent = msg;
+                        } else {
+                            alert(msg);
+                        }
+                    }
+                );
+            }
+        });
+    }
 })();
 </script>
 @endonce
