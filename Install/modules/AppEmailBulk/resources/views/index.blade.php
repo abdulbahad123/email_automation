@@ -9,9 +9,11 @@
         <a href="{{ route('app.emailbulk.process_now') }}" class="btn btn-light btn-sm actionItem" data-call-success="Main.DataTable_Reload('#DataTable')">
             <i class="fa-light fa-bolt me-1 text-warning"></i>{{ __('Process Batch Now') }}
         </a>
+        @if(session('login_as', 'client') !== 'client' || \Access::canAccess('appemailsend', false))
         <a href="{{ route('app.emailsend.index') }}" class="btn btn-dark btn-sm">
             <i class="fa-light fa-paper-plane me-1"></i>{{ __('Single Email') }}
         </a>
+        @endif
         <a href="{{ route('app.emailbulk.create') }}" class="btn btn-primary btn-sm">
             <i class="fa-light fa-plus me-1"></i>{{ __('New Campaign') }}
         </a>

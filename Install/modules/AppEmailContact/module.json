@@ -8,7 +8,7 @@
         "Modules\\AppEmailContact\\Providers\\AppEmailContactServiceProvider"
     ],
     "files": [],
-    "permission": false,
+    "permission": true,
     "menu": {
         "uri": "app/email/contact",
         "role": "client",
@@ -16,6 +16,7 @@
         "section": "top",
         "tab_id": 8,
         "tab_name": "Email Automation",
+        "parent": "appemailautomation",
         "position": 1406,
         "name": "Email Contacts",
         "color": "#10b981",

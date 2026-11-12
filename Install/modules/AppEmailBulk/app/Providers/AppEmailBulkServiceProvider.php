@@ -25,12 +25,19 @@ class AppEmailBulkServiceProvider extends ServiceProvider
         $this->registerTranslations();
         $this->registerConfig();
         $this->registerViews();
+        $this->registerPlanPermissions();
         $this->loadMigrationsFrom(module_path($this->name, 'database/migrations'));
 
         if (class_exists('AppDashboard')) {
             \AppDashboard::registerDashboardItem(function () {
                 return view('appemailbulk::partials.dashboard-item')->render();
-            }, 15000, fn () => auth()->check());
+            }, 15000, fn () => auth()->check() && (
+                session('login_as', 'client') !== 'client'
+                || (
+                    \Access::canAccess('appemailautomation', false)
+                    && \Access::canAccess('appemailsend', false)
+                )
+            ));
         }
 
         if (class_exists('CronService')) {
@@ -48,6 +55,7 @@ class AppEmailBulkServiceProvider extends ServiceProvider
     {
         $this->app->register(EventServiceProvider::class);
         $this->app->register(RouteServiceProvider::class);
+        $this->registerPricingFeature();
     }
 
     protected function registerSubMenu(): void
@@ -57,11 +65,49 @@ class AppEmailBulkServiceProvider extends ServiceProvider
                 [
                     'uri' => 'app/email/send',
                     'name' => 'Send Single Email',
+                    'permission' => 'appemailsend',
                     'position' => 1000,
                     'icon' => 'fa-light fa-paper-plane',
                     'color' => '#6d5dfc',
                 ],
             ]);
+        }
+    }
+
+    protected function registerPlanPermissions(): void
+    {
+        if (class_exists('Plan')) {
+            \Plan::addPermissions($this->name, [
+                'sort' => 4200,
+                'id' => '',
+                'key' => 'appemailbulk',
+                'module_name' => __('Email Automation'),
+                'view' => 'permissions',
+            ]);
+        }
+    }
+
+    protected function registerPricingFeature(): void
+    {
+        if (class_exists('Pricing')) {
+            $features = [
+                ['key' => 'appemailbulk', 'label' => __('Bulk Email'), 'sort' => 60],
+                ['key' => 'appemailsend', 'label' => __('Send Single Email'), 'sort' => 55],
+                ['key' => 'appemailcontact', 'label' => __('Email Contacts'), 'sort' => 50],
+                ['key' => 'appemailsmtp', 'label' => __('SMTP Accounts'), 'sort' => 45],
+            ];
+
+            foreach ($features as $feature) {
+                \Pricing::addSubFeatures([
+                    'sort' => $feature['sort'],
+                    'parent' => 'features',
+                    'tab_id' => 'email_automation',
+                    'tab_name' => __('Email Automation'),
+                    'key' => $feature['key'],
+                    'label' => $feature['label'],
+                    'type' => 'boolean',
+                ]);
+            }
         }
     }
 

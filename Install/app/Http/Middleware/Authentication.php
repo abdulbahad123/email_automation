@@ -316,7 +316,22 @@ class Authentication
             $needPermission = self::resolveModulePermission($module);
 
             if ($needPermission) {
+                if (in_array($permissionKey, ['appemailcontact', 'appemailsmtp'], true)) {
+                    \Access::check('appemailautomation', true, true);
+                }
                 \Access::check($permissionKey, true, true);
+            } elseif ($permissionKey === 'appemailbulk') {
+                \Access::check('appemailautomation', true, true);
+                $req = request();
+                if ($req->is('app/email/send') || $req->is('app/email/send/*')) {
+                    \Access::check('appemailsend', true, true);
+                } elseif ($req->is('app/email/bulk/upload-image')) {
+                    if (!\Access::canAccess('appemailbulk', true) && !\Access::canAccess('appemailsend', true)) {
+                        \Access::check('appemailbulk', true, true);
+                    }
+                } else {
+                    \Access::check('appemailbulk', true, true);
+                }
             }
         }
     }
@@ -385,6 +400,8 @@ class Authentication
             if ($menu_item['role'] != $loginAs) continue;
             $permissionKey = $module->getLowerName();
 
+            $skipSubMenus = false;
+
             if($loginAs == "client"){
                 $parentPermissionKey = $menu_item['parent'] ?? null;
 
@@ -393,7 +410,14 @@ class Authentication
                 }
 
                 if ($parentPermissionKey && (!Gate::has($permissionKey) || !\Access::canAccess($permissionKey, false))) {
-                    continue;
+                    if ($permissionKey === 'appemailbulk' && \Access::canAccess('appemailsend', false)) {
+                        $menu_item['uri'] = 'app/email/send';
+                        $menu_item['name'] = 'Send Single Email';
+                        $menu_item['icon'] = 'fa-light fa-paper-plane';
+                        $skipSubMenus = true;
+                    } else {
+                        continue;
+                    }
                 }
 
                 $permissionFlag = $module->get("permission");
@@ -409,19 +433,30 @@ class Authentication
             $moduleName = $module->getName();
             $addSubMenus = app()->bound('sub_menus') ? app('sub_menus') : [];
 
-            if (isset($addSubMenus[$moduleName])) {
-                $menu_item['sub_menu'] ??= [
-                    [
-                        "uri" => $menu_item['uri'],
-                        "name" => $menu_item['name'],
-                        "position" => 999999999,
-                        "icon" => $menu_item['icon'],
-                        "color" => $menu_item['color'],
-                    ]
-                ];
-
+            if (!$skipSubMenus && isset($addSubMenus[$moduleName])) {
+                $allowedSubMenus = [];
                 foreach ($addSubMenus[$moduleName] as $sub_menu) {
-                    if (is_array($sub_menu)) {
+                    if (!is_array($sub_menu)) {
+                        continue;
+                    }
+                    if ($loginAs == 'client' && !empty($sub_menu['permission']) && !\Access::canAccess($sub_menu['permission'], false)) {
+                        continue;
+                    }
+                    $allowedSubMenus[] = $sub_menu;
+                }
+
+                if (!empty($allowedSubMenus)) {
+                    $menu_item['sub_menu'] ??= [
+                        [
+                            "uri" => $menu_item['uri'],
+                            "name" => $menu_item['name'],
+                            "position" => 999999999,
+                            "icon" => $menu_item['icon'],
+                            "color" => $menu_item['color'],
+                        ]
+                    ];
+
+                    foreach ($allowedSubMenus as $sub_menu) {
                         $menu_item['sub_menu'][] = $sub_menu;
                     }
                 }

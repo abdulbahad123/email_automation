@@ -16,6 +16,7 @@
         "section": "top",
         "tab_id": 8,
         "tab_name": "Email Automation",
+        "parent": "appemailautomation",
         "position": 1410,
         "name": "Bulk Email",
         "color": "#6d5dfc",

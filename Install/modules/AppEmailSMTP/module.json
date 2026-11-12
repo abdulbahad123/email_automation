@@ -8,7 +8,7 @@
         "Modules\\AppEmailSMTP\\Providers\\AppEmailSMTPServiceProvider"
     ],
     "files": [],
-    "permission": false,
+    "permission": true,
     "menu": {
         "uri": "app/email/smtp",
         "role": "client",
@@ -16,6 +16,7 @@
         "section": "top",
         "tab_id": 8,
         "tab_name": "Email Automation",
+        "parent": "appemailautomation",
         "position": 1404,
         "name": "SMTP Accounts",
         "color": "#0ea5e9",
