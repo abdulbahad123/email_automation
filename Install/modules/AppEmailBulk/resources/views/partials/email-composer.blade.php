@@ -106,54 +106,58 @@
                     </button>
                 </div>
 
-                <!-- Preset Selector Cards -->
+                <!-- Preset Selector Cards (never use .btn here because theme .btn enforces fixed height & nowrap) -->
                 <div class="row g-2 mb-3">
                     @foreach($templates as $idx => $tpl)
-                        <div class="col-12 col-sm-6 col-md-4">
-                            <button type="button"
-                                    class="btn w-100 text-start p-2 border rounded-3 bg-white tpl-preset-card {{ $idx === 0 ? 'border-primary shadow-sm' : 'border-gray-200' }}"
-                                    data-prefix="{{ $prefix }}"
-                                    data-template-id="{{ $tpl['id'] }}">
+                        <div class="col-12 col-sm-6">
+                            <div role="button"
+                                 tabindex="0"
+                                 class="p-3 border rounded-3 bg-white h-100 tpl-preset-card {{ $idx === 0 ? 'border-primary shadow-sm' : 'border-gray-200' }}"
+                                 style="cursor: pointer; white-space: normal; display: block;"
+                                 data-prefix="{{ $prefix }}"
+                                 data-template-id="{{ $tpl['id'] }}">
                                 <div class="d-flex align-items-center gap-8 mb-1">
-                                    <span class="badge badge-sm" style="background: {{ $tpl['accent'] }}; color: #fff;">
+                                    <span class="d-inline-flex align-items-center justify-content-center rounded-2 flex-shrink-0"
+                                          style="width: 24px; height: 24px; background: {{ $tpl['accent'] }}; color: #fff; font-size: 12px;">
                                         <i class="{{ $tpl['icon'] }}"></i>
                                     </span>
-                                    <span class="fw-6 fs-12 text-gray-900 text-truncate">{{ $tpl['name'] }}</span>
+                                    <span class="fw-6 fs-13 text-gray-900">{{ $tpl['name'] }}</span>
                                 </div>
-                                <div class="fs-11 text-gray-500 lh-sm">{{ $tpl['description'] }}</div>
-                            </button>
+                                <div class="fs-12 text-gray-500" style="line-height: 1.4; white-space: normal;">{{ $tpl['description'] }}</div>
+                            </div>
                         </div>
                     @endforeach
                 </div>
 
-                <div class="row g-3">
-                    <div class="col-12 col-lg-6 d-flex flex-column gap-10">
-                        <div>
+                <!-- Template Customization Fields (Full width inside composer) -->
+                <div class="bg-white border rounded-3 p-3 mb-3">
+                    <div class="row g-3">
+                        <div class="col-md-5">
                             <label class="form-label fs-12 fw-6 mb-1">{{ __('Brand / Company Name') }}</label>
                             <input type="text" class="form-control form-control-sm tpl-field" id="{{ $prefix }}_tpl_brand" data-prefix="{{ $prefix }}">
                         </div>
-                        <div class="row g-2">
-                            <div class="col-6">
-                                <label class="form-label fs-12 fw-6 mb-1">{{ __('Top Badge') }}</label>
-                                <input type="text" class="form-control form-control-sm tpl-field" id="{{ $prefix }}_tpl_badge" data-prefix="{{ $prefix }}">
-                            </div>
-                            <div class="col-6">
-                                <label class="form-label fs-12 fw-6 mb-1">{{ __('Accent Color') }}</label>
-                                <input type="color" class="form-control form-control-color form-control-sm w-100 tpl-field" id="{{ $prefix }}_tpl_accent" value="#4f46e5" data-prefix="{{ $prefix }}">
-                            </div>
+                        <div class="col-md-4">
+                            <label class="form-label fs-12 fw-6 mb-1">{{ __('Top Badge') }}</label>
+                            <input type="text" class="form-control form-control-sm tpl-field" id="{{ $prefix }}_tpl_badge" data-prefix="{{ $prefix }}">
                         </div>
-                        <div>
+                        <div class="col-md-3">
+                            <label class="form-label fs-12 fw-6 mb-1">{{ __('Accent Color') }}</label>
+                            <input type="color" class="form-control form-control-color form-control-sm w-100 tpl-field" id="{{ $prefix }}_tpl_accent" value="#4f46e5" data-prefix="{{ $prefix }}">
+                        </div>
+
+                        <div class="col-12">
                             <label class="form-label fs-12 fw-6 mb-1">{{ __('Headline') }}</label>
                             <input type="text" class="form-control form-control-sm tpl-field" id="{{ $prefix }}_tpl_headline" data-prefix="{{ $prefix }}">
                         </div>
-                        <div>
+
+                        <div class="col-12">
                             <label class="form-label fs-12 fw-6 mb-1">{{ __('Header / Banner Image (Optional)') }}</label>
-                            <div class="input-group input-group-sm">
-                                <input type="text" class="form-control tpl-field" id="{{ $prefix }}_tpl_image_url" placeholder="{{ __('Upload an image or paste https:// URL') }}" data-prefix="{{ $prefix }}">
-                                <label class="btn btn-primary mb-0 cursor-pointer" for="{{ $prefix }}_inline_upload_tpl">
+                            <div class="d-flex flex-wrap gap-8 align-items-center">
+                                <input type="text" class="form-control form-control-sm flex-grow-1 tpl-field" style="min-width: 180px; width: auto;" id="{{ $prefix }}_tpl_image_url" placeholder="{{ __('Upload an image or paste https:// image URL') }}" data-prefix="{{ $prefix }}">
+                                <label class="btn btn-primary btn-sm mb-0 cursor-pointer flex-shrink-0" for="{{ $prefix }}_inline_upload_tpl">
                                     <i class="fa-light fa-upload me-1"></i>{{ __('Upload') }}
                                 </label>
-                                <button type="button" class="btn btn-light border tpl-clear-image" data-prefix="{{ $prefix }}" title="{{ __('Remove image') }}">
+                                <button type="button" class="btn btn-light btn-sm border tpl-clear-image flex-shrink-0" data-prefix="{{ $prefix }}" title="{{ __('Remove image') }}">
                                     <i class="fa-light fa-xmark"></i>
                                 </button>
                             </div>
@@ -164,37 +168,39 @@
                                    data-mode="template"
                                    accept="image/jpeg,image/png,image/gif,image/webp">
                         </div>
-                        <div>
+
+                        <div class="col-12">
                             <label class="form-label fs-12 fw-6 mb-1">{{ __('Main Message') }}</label>
                             <textarea rows="5" class="form-control form-control-sm tpl-field" id="{{ $prefix }}_tpl_message" data-prefix="{{ $prefix }}"></textarea>
                         </div>
-                        <div class="row g-2">
-                            <div class="col-5">
-                                <label class="form-label fs-12 fw-6 mb-1">{{ __('Button Text') }}</label>
-                                <input type="text" class="form-control form-control-sm tpl-field" id="{{ $prefix }}_tpl_cta_text" placeholder="{{ __('Leave empty to hide') }}" data-prefix="{{ $prefix }}">
-                            </div>
-                            <div class="col-7">
-                                <label class="form-label fs-12 fw-6 mb-1">{{ __('Button Link (URL)') }}</label>
-                                <input type="text" class="form-control form-control-sm tpl-field" id="{{ $prefix }}_tpl_cta_url" placeholder="https://..." data-prefix="{{ $prefix }}">
-                            </div>
+
+                        <div class="col-md-5">
+                            <label class="form-label fs-12 fw-6 mb-1">{{ __('Button Text') }}</label>
+                            <input type="text" class="form-control form-control-sm tpl-field" id="{{ $prefix }}_tpl_cta_text" placeholder="{{ __('Leave empty to hide') }}" data-prefix="{{ $prefix }}">
                         </div>
-                        <div>
+                        <div class="col-md-7">
+                            <label class="form-label fs-12 fw-6 mb-1">{{ __('Button Link (URL)') }}</label>
+                            <input type="text" class="form-control form-control-sm tpl-field" id="{{ $prefix }}_tpl_cta_url" placeholder="https://..." data-prefix="{{ $prefix }}">
+                        </div>
+
+                        <div class="col-12">
                             <label class="form-label fs-12 fw-6 mb-1">{{ __('Footer Note') }}</label>
                             <input type="text" class="form-control form-control-sm tpl-field" id="{{ $prefix }}_tpl_footer" data-prefix="{{ $prefix }}">
                         </div>
                     </div>
+                </div>
 
-                    <div class="col-12 col-lg-6 d-flex flex-column">
-                        <div class="d-flex justify-content-between align-items-center mb-1">
-                            <span class="fs-12 fw-6 text-gray-700">{{ __('Live Email Preview') }}</span>
-                            <button type="button" class="btn btn-primary btn-sm tpl-apply-to-editor" data-prefix="{{ $prefix }}">
-                                <i class="fa-light fa-check me-1"></i>{{ __('Apply & Edit in HTML') }}
-                            </button>
-                        </div>
-                        <div id="{{ $prefix }}_tpl_preview"
-                             class="border rounded-3 bg-white p-2 flex-grow-1 overflow-auto"
-                             style="max-height: 460px;"></div>
+                <!-- Live Email Preview (Full width) -->
+                <div>
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-8 mb-2">
+                        <span class="fs-12 fw-6 text-gray-700">{{ __('Live Email Preview') }}</span>
+                        <button type="button" class="btn btn-primary btn-sm tpl-apply-to-editor" data-prefix="{{ $prefix }}">
+                            <i class="fa-light fa-check me-1"></i>{{ __('Apply & Edit in HTML') }}
+                        </button>
                     </div>
+                    <div id="{{ $prefix }}_tpl_preview"
+                         class="border rounded-3 bg-white p-2 overflow-auto"
+                         style="max-height: 420px;"></div>
                 </div>
             </div>
         </div>
@@ -588,3 +594,4 @@
 })();
 </script>
 @endonce
+
