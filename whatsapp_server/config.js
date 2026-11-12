@@ -43,10 +43,13 @@ for (const envPath of candidateEnvPaths) {
 }
 
 const standaloneFlag = process.env.STANDALONE_MODE ?? envVars.STANDALONE_MODE ?? "true";
+const emailCronFlag = process.env.EMAIL_CRON_ENABLED ?? envVars.EMAIL_CRON_ENABLED ?? "true";
 
 const config = {
   debug: process.env.NODE_DEBUG === "true",
   standalone_mode: String(standaloneFlag).toLowerCase() !== "false",
+  email_cron_enabled: String(emailCronFlag).toLowerCase() !== "false",
+  email_cron_url: process.env.EMAIL_CRON_URL || envVars.EMAIL_CRON_URL || "",
   app_url: process.env.APP_URL || envVars.APP_URL || "http://127.0.0.1:8080/",
   database: {
     connectionLimit: 100,

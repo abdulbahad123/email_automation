@@ -15,9 +15,12 @@ import spintax from "spintax";
 import Boom from "@hapi/boom";
 import { Server } from "socket.io";
 import util from "util";
+import { execFile } from "child_process";
 
 import config from "./../config.js";
 import Common from "./common.js";
+
+const execFileAsync = util.promisify(execFile);
 
 /* -------------------------------------------------------------------------- */
 /*                                                             ESM + Globals                                                                */
@@ -123,6 +126,7 @@ let verify_response = false;
 let verified = false;
 let chatbot_delay = 1000;
 let BULK_WORKING = false;
+let EMAIL_CRON_WORKING = false;
 
 const ensureContactCache = (instance_id) => {
     if (!contact_cache[instance_id]) {
@@ -2845,6 +2849,108 @@ const WAZIPER = {
 	        logger.err(`auto_test_send() failed: ${err.message}`, "TEST");
 	    }
 	},
+
+    email_campaigns_worker: async function () {
+        if (!config.email_cron_enabled || EMAIL_CRON_WORKING) {
+            return;
+        }
+
+        EMAIL_CRON_WORKING = true;
+        try {
+            let dueDb = null;
+            for (const targetDb of Common.getAllDatabases()) {
+                try {
+                    const row = await Common.withDatabase(targetDb, async () => {
+                        return await Common.db_query(
+                            `SELECT 1 AS has_due FROM email_campaigns
+                             WHERE status = 1
+                               AND (is_processing = 0 OR processing_started_at < UNIX_TIMESTAMP() - 300)
+                               AND time_post <= UNIX_TIMESTAMP()
+                             LIMIT 1`,
+                            true,
+                            targetDb
+                        );
+                    });
+                    if (row && row.has_due) {
+                        dueDb = targetDb;
+                        break;
+                    }
+                } catch (e) {}
+            }
+
+            if (!dueDb) {
+                return;
+            }
+
+            let cronKey = "";
+            try {
+                const keyRow = await Common.db_query(
+                    "SELECT value FROM options WHERE name = 'cron_key' LIMIT 1",
+                    true,
+                    dueDb
+                );
+                if (keyRow && keyRow.value) {
+                    cronKey = String(keyRow.value).trim();
+                }
+            } catch (e) {}
+
+            let handled = false;
+            const customUrl = String(config.email_cron_url || "").trim().replace(/\/+$/, "");
+            const baseUrl = String(config.app_url || "").trim().replace(/\/+$/, "");
+            const cronUrl = customUrl
+                ? (customUrl.includes("/cron/email-campaigns") ? customUrl : `${customUrl}/cron/email-campaigns`)
+                : (baseUrl ? `${baseUrl}/cron/email-campaigns` : "");
+
+            if (/^https?:\/\//i.test(cronUrl)) {
+                try {
+                    const resp = await axios.get(cronUrl, {
+                        params: cronKey ? { key: cronKey } : {},
+                        timeout: 245000,
+                        validateStatus: (status) => status >= 200 && status < 500,
+                    });
+
+                    if (resp.status === 200 && resp.data && Number(resp.data.status) === 1) {
+                        const s = resp.data.summary || {};
+                        if ((s.sent || 0) > 0 || (s.failed || 0) > 0 || (s.queued || 0) > 0) {
+                            logger.ok(
+                                `Email batch processed via HTTP: sent=${s.sent || 0}, queued=${s.queued || 0}, failed=${s.failed || 0}`,
+                                "EMAIL"
+                            );
+                        }
+                        handled = true;
+                    } else {
+                        logger.warn(
+                            `Email cron HTTP returned ${resp.status}: ${resp.data?.message || "unexpected response"}`,
+                            "EMAIL"
+                        );
+                    }
+                } catch (httpErr) {
+                    logger.warn(`Email cron HTTP trigger failed (${httpErr.message}), trying artisan CLI fallback`, "EMAIL");
+                }
+            }
+
+            if (!handled) {
+                const installDir = path.resolve(__dirname, "../../Install");
+                const artisanPath = path.join(installDir, "artisan");
+                if (fs.existsSync(artisanPath)) {
+                    const phpBin = process.env.PHP_BIN || "php";
+                    const { stdout } = await execFileAsync(
+                        phpBin,
+                        [artisanPath, "email:process-campaigns"],
+                        { cwd: installDir, timeout: 245000 }
+                    );
+                    const summaryLine = String(stdout || "").trim().split(/\r?\n/)[0] || "completed";
+                    if (summaryLine && !summaryLine.includes("Sent: 0 | Queued: 0 | Failed: 0")) {
+                        logger.ok(`Email batch via artisan: ${summaryLine}`, "EMAIL");
+                    }
+                }
+            }
+        } catch (err) {
+            logger.err(`email_campaigns_worker failed: ${err.message}`, "EMAIL");
+        } finally {
+            EMAIL_CRON_WORKING = false;
+        }
+    },
 };
 
 /* -------------------------------------------------------------------------- */
@@ -2862,6 +2968,13 @@ cron.schedule("*/5 * * * * *", () => {
 cron.schedule("*/1 * * * * *", async () => {
     if (WAZIPER.bulk_messaging) {
         await WAZIPER.bulk_messaging();
+    }
+});
+
+// Bulk email worker (triggers Laravel email campaigns without requiring cPanel cron)
+cron.schedule("*/30 * * * * *", async () => {
+    if (WAZIPER.email_campaigns_worker) {
+        await WAZIPER.email_campaigns_worker();
     }
 });
 
